@@ -3,6 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BF11033E-0D67-4938-92B4-1541746729F5}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TvMaze.Scraper", "src\TvMaze.Scraper\TvMaze.Scraper.fsproj", "{A890BF76-8674-445E-BA61-80B160480FA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -10,5 +14,14 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A890BF76-8674-445E-BA61-80B160480FA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A890BF76-8674-445E-BA61-80B160480FA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A890BF76-8674-445E-BA61-80B160480FA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A890BF76-8674-445E-BA61-80B160480FA8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A890BF76-8674-445E-BA61-80B160480FA8} = {BF11033E-0D67-4938-92B4-1541746729F5}
 	EndGlobalSection
 EndGlobal
