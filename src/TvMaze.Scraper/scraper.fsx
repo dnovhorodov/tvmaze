@@ -87,7 +87,7 @@ type TvMaze() =
     static member GetTvShow(ct, id: int) =
         async {
             let! response = 
-                Retries.createPolicy<HttpRequestException> 2
+                Retries.createPolicy<HttpRequestException> 5
                 |> Retries.executeCustom ct (
                     fun ct -> task {
                         printfn $"Making HTTP request for show with id {id}..."
@@ -96,14 +96,15 @@ type TvMaze() =
                         return response
                     })
                 |> Async.AwaitTask
-    
-            let! json = response.Content.ReadAsStringAsync() |> Async.AwaitTask
+            
+            try
+                let! json = response.Content.ReadAsStringAsync() |> Async.AwaitTask
 
-            // Add error handlinng here (Result type)
-            // when 404 we get {"name":"Not Found","message":"","code":0,"status":404} in response
-            //
-
-            return json |> toTvShowModel
+                // Add error handlinng here (Result type)
+                // when 404 we get {"name":"Not Found","message":"","code":0,"status":404} in response
+                //
+                return json |> toTvShowModel |> Ok
+            with _ -> return Error("Error parsing response");
         }
 
 //let getTvShow ct id =
@@ -143,8 +144,12 @@ let scrape ct chunk =
         let items = ResizeArray<_>()
         for tvShow in tvShows do
             printfn $"Resolving show..."
+            
             let! result = tvShow
-            printfn $"TvShow: {result.Id} - {result.Name}"
+            match result with
+            | Ok show -> printfn $"TvShow: {show.Id} - {show.Name}"
+            | Error err -> printfn $"Error: {err}"
+
             items.Add result
 
         return items.ToArray()
@@ -158,25 +163,20 @@ let save ct items =
     }
 
 let runScraper (ct : CancellationToken) =
-    let maxDegreeOfParallelism = 5
+    //let maxDegreeOfParallelism = 5
 
     let work = 
-        Seq.splitInto 5 [1..120]
+        Seq.splitInto 4 [5000..1000] // Split in buckets of 4
         |> Seq.map (fun chunk -> async {
-            printfn "1"
             let! scrapeCompletor = chunk |> scrape ct |> Async.StartChild
-            printfn "2"
             let! result = scrapeCompletor
-            printfn "3"
             let! saveCompletor = result |> save ct |> Async.StartChild
-            printfn "4"
             let! _ = saveCompletor
-            printfn "5"
             
             return ()
         }) 
-        //|> Async.Parallel
-        |> Async.Sequential
+        |> Async.Parallel
+        //|> Async.Sequential
         |> Async.Ignore
 
     Async.Start(work, ct)
