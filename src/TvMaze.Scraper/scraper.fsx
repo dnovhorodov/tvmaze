@@ -63,15 +63,6 @@ type TvMaze() =
                 | Error _ -> () // here should be logging
         }
 
-let scrape saveFun ct chunk =
-    async {
-        for id in chunk do
-            //let! tvShow = TvMaze.GetTvShow(ct, id)
-            match! TvMaze.GetTvShow(ct, id) with
-            | Ok show -> show |> saveFun
-            | Error _ -> () // here should be logging
-    }
-
 let runScraper (ct : CancellationToken) =
     let chunkSize = 3 // maxDegreeOfParallelism
     let idRange = [1..500] // Tv show ids to scrape
