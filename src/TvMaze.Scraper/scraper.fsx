@@ -1,10 +1,9 @@
 ﻿open System.Net.Http
 open System
+open System.Collections.Concurrent;
 open System.Threading.Tasks
 open System.Threading
 open System.IO
-
-//module polly
 
 System.IO.Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__)
 
@@ -20,34 +19,17 @@ open Domain
 open DataAccess
 // open FSharp.Data
 
-let workingDirectory = Environment.CurrentDirectory
-let projectDirectory = Directory.GetParent(workingDirectory).Parent.FullName;
-let dbPath = Path.Combine(projectDirectory, "data", "tvmaze.db")
+//let workingDirectory = Environment.CurrentDirectory
+//let projectDirectory = Directory.GetParent(workingDirectory).Parent.FullName;
+//let dbPath = Path.Combine(projectDirectory, "data", "tvmaze.db")
 
 open LiteDB
 
-//let testSave tvShow =
-//    use db = new LiteDatabase(dbPath)
-//    let col = db.GetCollection<TvShowDto>("tv_shows")
-//    col.Insert(tvShow |> toDto) |> ignore
-//    col.EnsureIndex(fun s -> s.Name) |> ignore
-//    ()
-
-//let tvshow = 
-//    {
-//        TvShow.Id = 3
-//        Name = "test"
-//        Casts = [|{
-//            Id = 2
-//            Name = "TestCast"
-//            Birthday = DateTime.Today |> Some
-//        }|]
-//    }
-
-//testSave tvshow
-
 type TvMaze() =
     static let httpClient = new HttpClient (BaseAddress = new Uri("http://api.tvmaze.com"))
+    static let projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.FullName;
+    static let dbPath = Path.Combine(projectDirectory, "data", "tvmaze.db")
+
     static member GetTvShow(ct, id: int) =
         async {
             let! response = 
@@ -56,112 +38,56 @@ type TvMaze() =
                     fun ct -> task {
                         printfn $"Making HTTP request for show with id {id}..."
                         let! response = httpClient.GetAsync($"/shows/{id}?embed=cast", ct)
-                        //printfn $"Request for show with id {id} successful"
                         return response
                     })
                 |> Async.AwaitTask
             
             try
                 let! json = response.Content.ReadAsStringAsync() |> Async.AwaitTask
-
-                // Add error handlinng here (Result type)
-                // when 404 we get {"name":"Not Found","message":"","code":0,"status":404} in response
-                //
                 return json |> toTvShowModel |> Ok
             with _ -> return Error("Error parsing response");
         }
 
-//let getTvShow ct id =
-//  Retries.createPolicy<HttpRequestException> 3
-//  |> Retries.executeCustom ct (fun ct -> task {
-       
-//       printfn $"Making HTTP request for show with id {id}..."
-//       let! response = TvMaze.Http.GetAsync($"/shows/{id}?embed=cast", ct)
-//       //let! content = response.Content.ReadAsStringAsync()
-//       printfn $"Request for show with id {id} successful"
-       
-//       //return content
-//       return response
-//     })
+    static member Save(tvShow) =
+        try
+            use db = new LiteDatabase(dbPath)
+            let col = db.GetCollection<TvShowDto>("tv_shows")
+            col.Insert(tvShow |> toDto) |> ignore
+        with _ -> () // to keep it simple ignore all db write errors
 
-//let getTvShow ct id = async {
-//    let! response = 
-//        Retries.createPolicy<HttpRequestException> 3
-//        |> Retries.executeCustom ct (
-//            fun ct -> task {
-//                printfn $"Making HTTP request for show with id {id}..."
-//                let! response = TvMaze.Http.GetAsync($"/shows/{id}?embed=cast", ct)
-//                printfn $"Request for show with id {id} successful"
-//                return response
-//            })
-//        |> Async.AwaitTask
-    
-//    let! json = response.Content.ReadAsStringAsync() |> Async.AwaitTask
-//    return json |> toTvShowModel
-//}
+    static member Scrape(ct, chunk) =
+        async {
+            for id in chunk do
+                match! TvMaze.GetTvShow(ct, id) with
+                | Ok show -> TvMaze.Save(show)
+                | Error _ -> () // here should be logging
+        }
 
-let scrape ct chunk =
+let scrape saveFun ct chunk =
     async {
-        let tvShows = 
-            chunk |> Array.map (fun id -> TvMaze.GetTvShow(ct, id))
-
-        let results = ResizeArray<_>()
-        for tvShow in tvShows do
-            //let! result = tvShow
-            match! tvShow with
-            | Ok show -> results.Add show
-            | Error _ -> ()
-
-        return results |> Seq.toList
-    }
-
-let save tvShows =
-    async {
-        for tvShow in tvShows do
-            try
-                use db = new LiteDatabase(dbPath)
-                let col = db.GetCollection<TvShowDto>("tv_shows")
-                col.Insert(tvShow |> toDto) |> ignore
-            with _ -> () // to keep it simple ignore all db write errors
+        for id in chunk do
+            //let! tvShow = TvMaze.GetTvShow(ct, id)
+            match! TvMaze.GetTvShow(ct, id) with
+            | Ok show -> show |> saveFun
+            | Error _ -> () // here should be logging
     }
 
 let runScraper (ct : CancellationToken) =
     let chunkSize = 3 // maxDegreeOfParallelism
-    let idRange = [1..100] // Tv show ids to scrape
+    let idRange = [1..500] // Tv show ids to scrape
 
     let work = 
         idRange |> Seq.splitInto chunkSize // Split ids in buckets
-        |> Seq.map (fun chunk -> async {
-            let! scrapeCompletor = chunk |> scrape ct |> Async.StartChild
-            let! result = scrapeCompletor
-            printfn "Start writing in db..."
-            let! saveCompletor = result |> save |> Async.StartChild
-            let! _ = saveCompletor
-            //result |> save |> Async.StartImmediate
-            printfn "Finished writing in db..."
-            
-            return ()
-        }) 
-        //|> Async.Parallel     // this will actually run buckets in parallel
-        |> Async.Sequential     // this will run without parallelization
+        |> Seq.map (fun chunk -> async { do! TvMaze.Scrape(ct, chunk) })
+        |> Async.Parallel     // this will actually run buckets in parallel
+        //|> Async.Sequential     // this will run without parallelization
         |> Async.Ignore
 
-    //Async.Start(work, ct)
-    Async.RunSynchronously(work, 2000, ct)
+    Async.Start(work, ct)
 
 #time
 let cts = new System.Threading.CancellationTokenSource()
 runScraper cts.Token
-//System.Threading.Thread.Sleep(5000)
+//System.Threading.Thread.Sleep(2000)
 //cts.Cancel()
 #time
-
-//let cts = new System.Threading.CancellationTokenSource()
-//let token = cts.Token
-//let tvShow = TvMaze.GetTvShow(token, 17) |> Async.RunSynchronously
-
-//let getTvShowWithCancellation id = getTvShow token
-//getTvShowWithCancellation 1
-//Async.Start(main, cts.Token)
-//System.Threading.Thread.Sleep(1000)
-//cts.Cancel()
