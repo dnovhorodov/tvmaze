@@ -2,88 +2,52 @@
 open System
 open System.Threading.Tasks
 open System.Threading
+open System.IO
 
 //module polly
 
 System.IO.Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__)
 
 //#r "nuget: FsHttp"
-#r "nuget: FSharp.Data"
+#r "nuget: FSharp.Data, 5.0.2"
 #r "nuget: Polly, 7.2.3"
+#r "nuget: LiteDB, 5.0.15"
 #load "./Retries.fs"
+#load "./Domain.fs"
+#load "./DataAccess.fs"
 
-open FSharp.Data
+open Domain
+open DataAccess
+// open FSharp.Data
 
-type Cast = {
-    Id: int
-    Name: string
-    Birthday: DateTime option
-}
+let workingDirectory = Environment.CurrentDirectory
+let projectDirectory = Directory.GetParent(workingDirectory).Parent.FullName;
+let dbPath = Path.Combine(projectDirectory, "data", "tvmaze.db")
 
-type TvShow = {
-    Id: int
-    Name: string
-    Casts: Cast array
-}
+open LiteDB
 
-type TVMazeJson = JsonProvider<"""{
-  "id": 1,
-  "name": "Show name",
-  "_embedded": {
-    "cast": [
-      {
-        "person": {
-          "id": 1,
-          "name": "Cast name",
-          "birthday": "1979-07-17"
-        }
-      },
-      {
-        "person": {
-          "id": 2,
-          "name": "Another cast",
-          "birthday": null
-        }
-      }
-    ]
-  }
-}""">
+//let testSave tvShow =
+//    use db = new LiteDatabase(dbPath)
+//    let col = db.GetCollection<TvShowDto>("tv_shows")
+//    col.Insert(tvShow |> toDto) |> ignore
+//    col.EnsureIndex(fun s -> s.Name) |> ignore
+//    ()
 
-//let toTvShowModel json =
-//    json
-//    |> TVMazeJson.Parse 
-//    |> fun show -> 
-//        {
-//            Id = show.Id;
-//            Name = show.Name;
-//            Casts = show.Embedded.Cast
-//            |> Array.map (fun p ->
-//                {
-//                    Id = p.Person.Id;
-//                    Name = p.Person.Name;
-//                    Birthday = p.Person.Birthday;
-//                })
-//        }
+//let tvshow = 
+//    {
+//        TvShow.Id = 3
+//        Name = "test"
+//        Casts = [|{
+//            Id = 2
+//            Name = "TestCast"
+//            Birthday = DateTime.Today |> Some
+//        }|]
+//    }
+
+//testSave tvshow
 
 type TvMaze() =
     static let httpClient = new HttpClient (BaseAddress = new Uri("http://api.tvmaze.com"))
-    //static member Http = httpClient
-    static let toTvShowModel json =
-        json
-        |> TVMazeJson.Parse 
-        |> fun show -> 
-            {
-                Id = show.Id;
-                Name = show.Name;
-                Casts = show.Embedded.Cast
-                |> Array.map (fun p ->
-                    {
-                        Id = p.Person.Id;
-                        Name = p.Person.Name;
-                        Birthday = p.Person.Birthday;
-                    })
-            }
-
     static member GetTvShow(ct, id: int) =
         async {
             let! response = 
@@ -141,46 +105,49 @@ let scrape ct chunk =
         let tvShows = 
             chunk |> Array.map (fun id -> TvMaze.GetTvShow(ct, id))
 
-        let items = ResizeArray<_>()
+        let results = ResizeArray<_>()
         for tvShow in tvShows do
-            printfn $"Resolving show..."
-            
-            let! result = tvShow
-            match result with
-            | Ok show -> printfn $"TvShow: {show.Id} - {show.Name}"
-            | Error err -> printfn $"Error: {err}"
+            //let! result = tvShow
+            match! tvShow with
+            | Ok show -> results.Add show
+            | Error _ -> ()
 
-            items.Add result
-
-        return items.ToArray()
+        return results |> Seq.toList
     }
 
-let save ct items =
+let save tvShows =
     async {
-        for item in items do
-            //let! _ = fn2 item
-            return ()
+        for tvShow in tvShows do
+            try
+                use db = new LiteDatabase(dbPath)
+                let col = db.GetCollection<TvShowDto>("tv_shows")
+                col.Insert(tvShow |> toDto) |> ignore
+            with _ -> () // to keep it simple ignore all db write errors
     }
 
 let runScraper (ct : CancellationToken) =
-    //let maxDegreeOfParallelism = 5
+    let chunkSize = 3 // maxDegreeOfParallelism
+    let idRange = [1..100] // Tv show ids to scrape
 
     let work = 
-        Seq.splitInto 4 [5000..1000] // Split in buckets of 4
+        idRange |> Seq.splitInto chunkSize // Split ids in buckets
         |> Seq.map (fun chunk -> async {
             let! scrapeCompletor = chunk |> scrape ct |> Async.StartChild
             let! result = scrapeCompletor
-            let! saveCompletor = result |> save ct |> Async.StartChild
+            printfn "Start writing in db..."
+            let! saveCompletor = result |> save |> Async.StartChild
             let! _ = saveCompletor
+            //result |> save |> Async.StartImmediate
+            printfn "Finished writing in db..."
             
             return ()
         }) 
-        |> Async.Parallel
-        //|> Async.Sequential
+        //|> Async.Parallel     // this will actually run buckets in parallel
+        |> Async.Sequential     // this will run without parallelization
         |> Async.Ignore
 
-    Async.Start(work, ct)
-    //Async.RunSynchronously(work, 1000, token)
+    //Async.Start(work, ct)
+    Async.RunSynchronously(work, 2000, ct)
 
 #time
 let cts = new System.Threading.CancellationTokenSource()
