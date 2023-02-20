@@ -74,12 +74,12 @@ let execute config ct =
 
     match config.Exec with
     | Parallel maxDegreeOfParallelism -> 
-        worker tvMaze maxDegreeOfParallelism
-            |> Async.Parallel
-            |> Async.Ignore
-            |> Async.RunSynchronously
+            Async.RunSynchronously(
+                worker tvMaze maxDegreeOfParallelism
+                |> Async.Parallel 
+                |> Async.Ignore, 1000, ct)
     | Sequential ->
-        worker tvMaze 1
-            |> Async.Sequential
-            |> Async.Ignore
-            |> Async.RunSynchronously
+            Async.RunSynchronously(
+                worker tvMaze 1 
+                |> Async.Sequential 
+                |> Async.Ignore, 1000, ct)
