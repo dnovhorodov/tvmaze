@@ -31,7 +31,7 @@ type TvMaze(config: Config) =
     member this.GetTvShow(ct, id: int) =
         async {
             let! response = 
-                createPolicy<HttpRequestException> 5
+                createPolicy<HttpRequestException> 10
                 |> executeCustom ct (
                     fun ct -> task {
                         // here should be logging
@@ -73,13 +73,13 @@ let execute config ct =
     let tvMaze = TvMaze(config)
 
     match config.Exec with
-    | Parallel maxDegreeOfParallelism -> 
+    | Parallel maxDegreeOfParallelism ->
             Async.RunSynchronously(
                 worker tvMaze maxDegreeOfParallelism
-                |> Async.Parallel 
+                |> Async.Parallel
                 |> Async.Ignore, 1000, ct)
     | Sequential ->
             Async.RunSynchronously(
-                worker tvMaze 1 
-                |> Async.Sequential 
+                worker tvMaze 1
+                |> Async.Sequential
                 |> Async.Ignore, 1000, ct)

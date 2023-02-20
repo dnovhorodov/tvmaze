@@ -15,21 +15,23 @@ let main _ =
     let config = {
         DbPath = Path.Combine(@"D:\My\RTL\data", DbConfig.Database)
         TvShowsMinId = 1
-        TvShowsMaxId = 67022
-        Exec = Parallel (MaxDegreeOfParallelism = 3)
-        // Exec = Sequential
+        TvShowsMaxId = 1000
+        // Exec = Parallel (MaxDegreeOfParallelism = 3)
+        Exec = Sequential
     }
 
     try
         let cts = new Threading.CancellationTokenSource()
         Console.CancelKeyPress.Add(fun arg -> arg.Cancel <- true; cts.Cancel())
 
-        printfn "Start scraping..."
+        printfn $"[{DateTime.Now}] Start scraping..."
         printfn "Relax and give it a couple of minutes to scrape some data :)"
         printfn ""
         printfn "Press Ctrl+C to exit if you tired waiting"
 
         (config, cts.Token) ||> execute
+
+        printfn $"[{DateTime.Now}] Finished scraping"
         0
     with
         | Failure msg -> eprintfn $"General Failure: {msg}"; -1
