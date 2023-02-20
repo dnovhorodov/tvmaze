@@ -63,22 +63,28 @@ type TvMaze() =
                 | Error _ -> () // here should be logging
         }
 
-let runScraper (ct : CancellationToken) =
+let scraperTask =
     let chunkSize = 3 // maxDegreeOfParallelism
     let idRange = [1..500] // Tv show ids to scrape
-
-    let work = 
-        idRange |> Seq.splitInto chunkSize // Split ids in buckets
-        |> Seq.map (fun chunk -> async { do! TvMaze.Scrape(ct, chunk) })
-        |> Async.Parallel     // this will actually run buckets in parallel
-        //|> Async.Sequential     // this will run without parallelization
-        |> Async.Ignore
-
-    Async.Start(work, ct)
+    
+    idRange |> Seq.splitInto chunkSize // Split ids in buckets
+    |> Seq.map (fun chunk -> async {
+        let! ct = Async.CancellationToken
+        do! TvMaze.Scrape(ct, chunk)
+    })
 
 #time
 let cts = new System.Threading.CancellationTokenSource()
-runScraper cts.Token
-//System.Threading.Thread.Sleep(2000)
+let ct = cts.Token
+
+Async.Start(scraperTask |> Async.Parallel |> Async.Ignore, ct)
+
+//scraperTask
+//|> Async.Parallel
+//|> Async.Ignore
+//|> Async.RunSynchronously
+
+//|> Async.Start(runScraper, ct)
+//Async.RunSynchronously(runScraper, 1000, cts.Token)
 //cts.Cancel()
 #time
