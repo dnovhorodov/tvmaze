@@ -34,7 +34,7 @@ type TvMaze(config: Config) =
                 createPolicy<HttpRequestException> 5
                 |> executeCustom ct (
                     fun ct -> task {
-                        printfn $"[HTTP]::Scraping show with id {id}..."
+                        // here should be logging
                         let! response = httpClient.GetAsync($"/shows/{id}?embed=cast", ct)
                         return response
                     })
