@@ -11,12 +11,15 @@ System.IO.Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__)
 #r "nuget: FSharp.Data, 5.0.2"
 #r "nuget: Polly, 7.2.3"
 #r "nuget: LiteDB, 5.0.15"
+#r @"D:\My\RTL\src\TvMaze.Scraper\bin\Debug\net7.0\TvMaze.Persistence.dll"
 #load "./Retries.fs"
 #load "./Domain.fs"
 #load "./DataAccess.fs"
 
+
 open Domain
 open DataAccess
+open TvMaze.Persistence
 // open FSharp.Data
 
 //let workingDirectory = Environment.CurrentDirectory
@@ -51,8 +54,8 @@ type TvMaze() =
     static member Save(tvShow) =
         try
             use db = new LiteDatabase(dbPath)
-            let col = db.GetCollection<TvShowDto>("tv_shows")
-            col.Insert(tvShow |> toDto) |> ignore
+            let col = db.GetCollection<TvShowDbModel>("tv_shows")
+            col.Insert(tvShow |> toDbModel) |> ignore
         with _ -> () // to keep it simple ignore all db write errors
 
     static member Scrape(ct, chunk) =
@@ -65,7 +68,7 @@ type TvMaze() =
 
 let scraperTask =
     let chunkSize = 3 // maxDegreeOfParallelism
-    let idRange = [1..500] // Tv show ids to scrape
+    let idRange = [500..1000] // Tv show ids to scrape
     
     idRange |> Seq.splitInto chunkSize // Split ids in buckets
     |> Seq.map (fun chunk -> async {

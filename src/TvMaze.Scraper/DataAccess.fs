@@ -1,5 +1,6 @@
 ﻿module DataAccess
 
+open TvMaze.Persistence
 open FSharp.Data
 open Domain
 open System
@@ -27,18 +28,18 @@ type TVMazeJson = JsonProvider<"""{
   }
 }""">
 
-type CastDto = {
-    Id: int
-    Name: string
-    Birthday: Nullable<DateTime>
-}
+//type CastDto = {
+//    Id: int
+//    Name: string
+//    Birthday: Nullable<DateTime>
+//}
 
-type TvShowDto = {
-    Id: int
-    Name: string
-    Casts: CastDto list
-    Timestamp: DateTime
-}
+//type TvShowDto = {
+//    Id: int
+//    Name: string
+//    Casts: CastDto list
+//    Timestamp: DateTime
+//}
 
 let toTvShowModel json =
     json
@@ -56,15 +57,29 @@ let toTvShowModel json =
                 })
         } : TvShow
 
-let toDto (tvShow : TvShow) =
-    {
-        Id = tvShow.Id
-        Name = tvShow.Name
-        Casts = tvShow.Casts |> Array.map (fun c ->
-        {
-            Id = c.Id
-            Name = c.Name
-            Birthday = c.Birthday |> function | Some brth -> Nullable<DateTime> brth | None -> Nullable()
-        }) |> List.ofArray
-        Timestamp = DateTime.UtcNow
-    }
+//let toDto (tvShow : TvShow) =
+//    {
+//        Id = tvShow.Id
+//        Name = tvShow.Name
+//        Casts = tvShow.Casts |> Array.map (fun c ->
+//        {
+//            Id = c.Id
+//            Name = c.Name
+//            Birthday = c.Birthday |> function | Some brth -> Nullable<DateTime> brth | None -> Nullable()
+//        }) |> List.ofArray
+//        Timestamp = DateTime.UtcNow
+//    }
+
+let toDbModel (tvShow : TvShow) =
+    new TvShowDbModel (
+        Id = tvShow.Id,
+        Name = tvShow.Name,
+        Timestamp = DateTime.UtcNow,
+        Casts = ResizeArray(tvShow.Casts |> Array.map (fun c ->
+            let brth = c.Birthday |> function | Some brth -> Nullable<DateTime> brth | None -> Nullable()
+            new TvMaze.Persistence.Cast (
+                Id = c.Id,
+                Name = c.Name,
+                Birthday = brth
+            )))
+        )
