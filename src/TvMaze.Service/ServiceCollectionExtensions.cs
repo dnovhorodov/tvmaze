@@ -12,8 +12,8 @@ public static class ServiceCollectionExtensions
             {
                 configuration.GetSection(Settings.Name).Bind(settings);
                 
-                var projectDirectory = Directory.GetParent(Environment.CurrentDirectory)!.Parent!.FullName;
-                settings.DatabasePath = Path.Combine(projectDirectory, "data", settings.DatabaseName);
+                //var projectDirectory = Directory.GetParent(Environment.CurrentDirectory)!.Parent!.FullName;
+                //settings.DatabasePath = Path.Combine(projectDirectory, "data", settings.DatabaseName);
             });
     }
 

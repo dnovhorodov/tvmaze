@@ -12,10 +12,10 @@ public static class Endpoints
 
         // Offset pagination
         //
-        tvShows.MapGet("/", (int limit, int? offset, IOptions<Settings> settings) =>
+        tvShows.MapGet("/", (int limit, int? offset) =>
         {
-            using var db = new LiteDatabase(settings.Value.DatabasePath);
-            var col = db.GetCollection<TvShowDbModel>(settings.Value.Collection);
+            using var db = new LiteDatabase(Config.DbPath);
+            var col = db.GetCollection<TvShowDbModel>(Config.Collection);
             var tvShows = col.Query()
                 .Limit(limit)
                 .Offset(offset ?? 0)

@@ -1,13 +1,8 @@
 ﻿open System.Net.Http
 open System
-open System.Collections.Concurrent;
-open System.Threading.Tasks
-open System.Threading
-open System.IO
 
 System.IO.Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__)
 
-//#r "nuget: FsHttp"
 #r "nuget: FSharp.Data, 5.0.2"
 #r "nuget: Polly, 7.2.3"
 #r "nuget: LiteDB, 5.0.15"
@@ -17,22 +12,14 @@ System.IO.Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__)
 #load "./DataAccess.fs"
 
 
-open Domain
 open DataAccess
 open TvMaze.Persistence
 // open FSharp.Data
-
-//let workingDirectory = Environment.CurrentDirectory
-//let projectDirectory = Directory.GetParent(workingDirectory).Parent.FullName;
-//let dbPath = Path.Combine(projectDirectory, "data", "tvmaze.db")
 
 open LiteDB
 
 type TvMaze() =
     static let httpClient = new HttpClient (BaseAddress = new Uri("http://api.tvmaze.com"))
-    static let projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.FullName;
-    static let dbPath = Path.Combine(projectDirectory, "data", "tvmaze.db")
-
     static member GetTvShow(ct, id: int) =
         async {
             let! response = 
@@ -53,8 +40,8 @@ type TvMaze() =
 
     static member Save(tvShow) =
         try
-            use db = new LiteDatabase(dbPath)
-            let col = db.GetCollection<TvShowDbModel>("tv_shows")
+            use db = new LiteDatabase(Config.DbPath)
+            let col = db.GetCollection<TvShowDbModel>(Config.Collection)
             col.Insert(tvShow |> toDbModel) |> ignore
         with _ -> () // to keep it simple ignore all db write errors
 
@@ -68,7 +55,7 @@ type TvMaze() =
 
 let scraperTask =
     let chunkSize = 3 // maxDegreeOfParallelism
-    let idRange = [500..1000] // Tv show ids to scrape
+    let idRange = [1000..1500] // Tv show ids to scrape
     
     idRange |> Seq.splitInto chunkSize // Split ids in buckets
     |> Seq.map (fun chunk -> async {
