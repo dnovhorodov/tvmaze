@@ -1,9 +1,9 @@
-﻿module DataAccess
+﻿module TvMaze.Scraper.Data
 
-open TvMaze.Persistence
 open FSharp.Data
-open Domain
 open System
+open TvMaze.Persistence
+open Domain
 
 type TVMazeJson = JsonProvider<"""{
   "id": 1,
@@ -28,19 +28,6 @@ type TVMazeJson = JsonProvider<"""{
   }
 }""">
 
-//type CastDto = {
-//    Id: int
-//    Name: string
-//    Birthday: Nullable<DateTime>
-//}
-
-//type TvShowDto = {
-//    Id: int
-//    Name: string
-//    Casts: CastDto list
-//    Timestamp: DateTime
-//}
-
 let toTvShowModel json =
     json
     |> TVMazeJson.Parse 
@@ -56,19 +43,6 @@ let toTvShowModel json =
                     Birthday = p.Person.Birthday;
                 })
         } : TvShow
-
-//let toDto (tvShow : TvShow) =
-//    {
-//        Id = tvShow.Id
-//        Name = tvShow.Name
-//        Casts = tvShow.Casts |> Array.map (fun c ->
-//        {
-//            Id = c.Id
-//            Name = c.Name
-//            Birthday = c.Birthday |> function | Some brth -> Nullable<DateTime> brth | None -> Nullable()
-//        }) |> List.ofArray
-//        Timestamp = DateTime.UtcNow
-//    }
 
 let toDbModel (tvShow : TvShow) =
     new TvShowDbModel (

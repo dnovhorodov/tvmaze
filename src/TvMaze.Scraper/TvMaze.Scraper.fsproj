@@ -8,11 +8,11 @@
 
   <ItemGroup>
     <Compile Include="Domain.fs" />
-    <Compile Include="DataAccess.fs" />
     <Compile Include="Retries.fs" />
-    <None Include="scraper.fsx" />
-    <None Include="scratchpad.fsx" />
+    <Compile Include="Data.fs" />
+    <Compile Include="Scraper.fs" />
     <Compile Include="Program.fs" />
+    <None Include="scraper.fsx" />
   </ItemGroup>
 
   <ItemGroup>

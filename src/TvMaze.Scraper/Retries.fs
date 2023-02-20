@@ -1,4 +1,4 @@
-﻿module Retries
+﻿module TvMaze.Scraper.Retries
 
 open System
 open System.Threading
@@ -17,9 +17,6 @@ let createPolicy<'a when 'a :> exn> retryCount =
         .WaitAndRetryAsync(
             retryCount = retryCount,
             sleepDurationProvider = fun retryAttempt -> TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(jitterer.Next(0, 1000)) )
-
-//let executeCustom<'a> ct (fn: CancellationToken -> Task<'a>) (policy: AsyncRetryPolicy) =
-//    policy.ExecuteAsync<'a>(action = fn, cancellationToken = ct)
 
 let executeCustom<'a when 'a :> HttpResponseMessage> ct (fn: CancellationToken -> Task<'a>) (policy: AsyncRetryPolicy<'a>) =
     policy.ExecuteAsync(action = fn, cancellationToken = ct)

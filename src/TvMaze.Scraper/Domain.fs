@@ -1,4 +1,4 @@
-﻿module Domain
+﻿module TvMaze.Scraper.Domain
 
 open System
 
