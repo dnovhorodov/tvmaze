@@ -13,11 +13,10 @@ let main _ =
     "
 
     let config = {
-        DbPath = Path.Combine(@"D:\My\RTL\data", DbConfig.Database)
         TvShowsMinId = 1
         TvShowsMaxId = 67022
-        // Exec = Parallel (MaxDegreeOfParallelism = 3)
-        Exec = Sequential
+        Exec = Parallel (MaxDegreeOfParallelism = 3)
+        // Exec = Sequential
     }
 
     try

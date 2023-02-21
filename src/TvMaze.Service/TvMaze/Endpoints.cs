@@ -16,10 +16,9 @@ public static class Endpoints
         //      /tv-shows?limit=25
         //      /tv-shows?limit=25&offset=25
         //
-        tvShows.MapGet("/", 
-            (int limit, int? offset, IOptions<Settings> settings) =>
+        tvShows.MapGet("/", (int limit, int? offset) =>
         {
-            using var db = new LiteDatabase(Path.Combine(settings.Value.DbPath, DbConfig.Database));
+            using var db = new LiteDatabase(DbConfig.DbPath);
             var col = db.GetCollection<TvShowDbModel>(DbConfig.Collection);
             var tvShows = col.Query()
                 .Limit(limit)
@@ -35,10 +34,9 @@ public static class Endpoints
         //      /tv-shows/keyset?pageSize=25
         //      /tv-shows/keyset?pageSzie=25&lastId=25
         //
-        tvShows.MapGet("/keyset", 
-            (int pageSize, int? lastId, IOptions<Settings> settings) =>
+        tvShows.MapGet("/keyset", (int pageSize, int? lastId) =>
         {
-            using var db = new LiteDatabase(Path.Combine(settings.Value.DbPath, DbConfig.Database));
+            using var db = new LiteDatabase(DbConfig.DbPath);
             var col = db.GetCollection<TvShowDbModel>(DbConfig.Collection);
             var tvShows = col.Query()
                 .Where(x => lastId.HasValue ? x.Id >= lastId + 1 : x.Id >= 1)
@@ -55,7 +53,7 @@ public static class Endpoints
         //
         tvShows.MapGet("/pagination", (int page, IOptions<Settings> settings) =>
         {
-            using var db = new LiteDatabase(Path.Combine(settings.Value.DbPath, DbConfig.Database));
+            using var db = new LiteDatabase(DbConfig.DbPath);
             var col = db.GetCollection<TvShowDbModel>(DbConfig.Collection);
             var tvShows = col.Query()
                 .Limit(settings.Value.PageSize)

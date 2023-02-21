@@ -12,8 +12,6 @@ type ExecutionMode =
     | Parallel of MaxDegreeOfParallelism : int
 
 type Config = {
-    // Path to the folder with database
-    DbPath: string
     // Min TvShow id for scraping
     TvShowsMinId: int
     // Max TvShow id for scraping
@@ -48,7 +46,7 @@ type TvMaze(config: Config) =
 
     member this.Save(tvShow) =
         try
-            use db = new LiteDatabase(connectionString = config.DbPath)
+            use db = new LiteDatabase(connectionString = DbConfig.DbPath)
             let col = db.GetCollection<TvShowDbModel>(DbConfig.Collection)
             col.Insert(tvShow |> toDbModel) |> ignore
         with _ -> () // to keep it simple ignore all db write errors

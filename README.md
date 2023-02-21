@@ -29,29 +29,25 @@ TvMaze Service is a Web API written in C# that targets .NET 7. It exposes endpoi
 
 ## Get started
 
-TvMaze Scraper and Service use common database, so it is important to update database path in both projects.
+TvMaze Scraper and Service use common database, so it is important to update database path first. Navigate to the `TvMaze.Persistence` project and change `DbPath` in `DbConfig` class to your path. Please use absolute path.
 
-### TvMaze Scraper
-Navigate to the `TvMaze.Scraper` project and change `DbPath` in `Program.fs` to your path:
+### TvMaze Scraper configuration
+Navigate to the `TvMaze.Scraper` project and in `Program.fs` adjust settings:
 
 ```fsharp
 let config = {
-        DbPath = Path.Combine(@"D:\My\RTL\data", DbConfig.Database)
         TvShowsMinId = 1
         TvShowsMaxId = 67022
         Exec = Parallel (MaxDegreeOfParallelism = 3)
     }
 ```
-Please use absolute path.
+You could specify the range of ids for scraping and execution mode. Parallel execution is fast, but does not work well with LiteDB. To get more predictable and consistent results use sequential execution mode: `Exec = Sequential`. Get it fast but a bit messy with `Exec = Parallel (MaxDegreeOfParallelism = 3)`
 
-You could also specify the range of ids for scraping and execution mode. Parallel execution is fast, but does not work well with LiteDB. To get more predictable and consistent results use sequential execution mode: `Exec = Sequential`. Get it fast but messy with `Exec = Parallel (MaxDegreeOfParallelism = 3)`
-
-### TvMaze Service
-Navigate to the `TvMaze.Service` project and change `DbPath` in `appsettings.json` to your path:
+### TvMaze Service configuration
+Navigate to the `TvMaze.Service` project's `appsettings.json`:
 
 ```json
-"TvMaze": {
-    "DbPath": "D:\\My\\RTL\\data",
+"TvMaze": {    
     "PageSize": 25
   }
 ```
