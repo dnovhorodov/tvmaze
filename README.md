@@ -12,7 +12,7 @@ TvMaze scraper targets .NET 7 and written in F#. It uses [LiteDB](https://www.li
 * There some simplifications (e.g. no logging, status progress)
 
 ### Possible improvements
-* Resumable state for scraper (e.g. check when left off by checking the last id)
+* Resumable state for scraper (e.g. check when left off by checking the last id, check whether tv show was already in DB, gracefully handle 404s, etc.)
 * Implement scraper via [F#'s Mailbox Processor](https://en.wikibooks.org/wiki/F_Sharp_Programming/MailboxProcessor) (a.k.a actor model)
 * Use server-side RDBMS or NoSQL (e.g. RavenDB)
 * Better logging and satus on progress
@@ -54,7 +54,7 @@ Navigate to the `TvMaze.Service` project's `appsettings.json`:
 Set PageSize for simple pagination based on page number
 
 ### Database
-Solution already comes with some scraped sample data. You can find db file in `data\tvmaze.db`. You can download [LiteDB.Stdio](https://github.com/mbdavid/LiteDB.Studio/releases) to open it and query content.
+Solution comes with some scraped sample data. You can find db file in `data\tvmaze.db`. You can download [LiteDB.Stdio](https://github.com/mbdavid/LiteDB.Studio/releases) to open it and query content. There are around 1500 tv shows in there already.
 
 ## Run
 
@@ -66,7 +66,7 @@ dotnet build
 ```sh
 dotnet run --project .\src\TvMaze.Scraper\TvMaze.Scraper.fsproj
 ```
-Wait for a while for data to be scraped. You can cancel it by pressing `Ctrl+C` or start service in another terminal session (it should be able to open it in shared mode)
+Wait for a while for data to be scraped. You can cancel it by pressing `Ctrl+C` or start service in another terminal session (it should be able to open it in shared mode). You can change `TvShowsMinId` and `TvShowsMaxId` parameters to instruct scraper which id ranges to scrape. So a good way to start is to set `TvShowsMinId = 1500` and `TvShowsMinId = 67022`. In that way excluding already scraped samples. 
 
 ### Start service
 
