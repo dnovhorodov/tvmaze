@@ -44,7 +44,7 @@ let config = {
 ```
 Please use absolute path.
 
-You could also specify the range of ids for scraping and execution mode. Parallel execution is fast, does not work well with LiteDB. To get more predictable and consisten results use sequential execution mode: `Exec = Sequential`. Get it fast but messy with `Exec = Parallel (MaxDegreeOfParallelism = 3)`
+You could also specify the range of ids for scraping and execution mode. Parallel execution is fast, but does not work well with LiteDB. To get more predictable and consistent results use sequential execution mode: `Exec = Sequential`. Get it fast but messy with `Exec = Parallel (MaxDegreeOfParallelism = 3)`
 
 ### TvMaze Service
 Navigate to the `TvMaze.Service` project and change `DbPath` in `appsettings.json` to your path:
