@@ -20,7 +20,7 @@ TvMaze scraper targets .NET 7 and written in F#. It uses [LiteDB](https://www.li
 
 ## TvMaze Service
 
-TvMaze Service is a Web API written in C# that targets .NET 7. It exposes endpoints for paginated traversal of data scraped by TvMaze Scraper. As well as a scraper, it uses the same shared LiteDB database that is used was data scraping.
+TvMaze Service is a Web API written in C# that targets .NET 7. It exposes endpoints for paginated traversal of data scraped by TvMaze Scraper. As well as a scraper, it uses the same shared LiteDB database that is used for data scraping.
 
 3 pagination strategy implemented:
 * Simple pagination with a page number
