@@ -66,7 +66,7 @@ dotnet build
 ```sh
 dotnet run --project .\src\TvMaze.Scraper\TvMaze.Scraper.fsproj
 ```
-Wait for a while for data to be scraped. You can cancel it by pressing `Ctrl+C` or start service in another terminal session (it should be able to open it in shared mode). You can change `TvShowsMinId` and `TvShowsMaxId` parameters to instruct scraper which id ranges to scrape. So a good way to start is to set `TvShowsMinId = 1500` and `TvShowsMinId = 67022`. In that way excluding already scraped samples. 
+Wait for a while for data to be scraped. You can cancel it by pressing `Ctrl+C` or just start *TvMaze Service* in another terminal session (it should be able to open DB file in shared mode). You can change `TvShowsMinId` and `TvShowsMaxId` parameters to instruct scraper which id ranges to scrape. So a good way to start is to set `TvShowsMinId = 1500` and `TvShowsMinId = 67022`. In that way excluding already scraped samples. 
 
 ### Start service
 
