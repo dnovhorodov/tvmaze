@@ -42,6 +42,7 @@ let toTvShowModel json =
                     Name = p.Person.Name;
                     Birthday = p.Person.Birthday;
                 })
+            |> List.ofArray
         } : TvShow
 
 let toDbModel (tvShow : TvShow) =
@@ -49,7 +50,7 @@ let toDbModel (tvShow : TvShow) =
         Id = tvShow.Id,
         Name = tvShow.Name,
         Timestamp = DateTime.UtcNow,
-        Casts = ResizeArray(tvShow.Casts |> Array.map (fun c ->
+        Casts = ResizeArray(tvShow.Casts |> List.map (fun c ->
             let brth = c.Birthday |> function | Some brth -> Nullable<DateTime> brth | None -> Nullable()
             new TvMaze.Persistence.Cast (
                 Id = c.Id,

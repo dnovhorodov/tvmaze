@@ -11,5 +11,5 @@ type Cast = {
 type TvShow = {
     Id: int
     Name: string
-    Casts: Cast array
+    Casts: Cast list
 }
